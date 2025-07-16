@@ -1,3 +1,4 @@
+// This class represents one item in an order.
 package CW_NDQ;
 
 public class OrderItem {

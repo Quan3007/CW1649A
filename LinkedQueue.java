@@ -1,3 +1,4 @@
+// This class is a simple queue (first in, first out).
 package CW_NDQ;
 
 public class LinkedQueue<T> implements AbstractLinkedQueue<T> {

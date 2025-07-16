@@ -1,274 +1,255 @@
 package CW_NDQ;
+
 import java.util.Scanner;
 
 public class BookstoreApp {
-    static ArrayList<Book> catalog = new ArrayList<>();
-    static LinkedQueue<Order> orderQueue = new LinkedQueue<>();
-    static ArrayList<Order> orderHistory = new ArrayList<>();
+    private Book[] catalog;
+    private int catalogSize;
+    private LinkedQueue<Order> orderQueue;
+    private MyArrayList<Order> orderHistory;
+    private LinkedStack<Order> orderStack;
+    private Scanner sc;
 
-    public static void main(String[] args) {
+    public BookstoreApp() {
+        this.catalog = new Book[10];
+        this.catalogSize = 0;
+        this.orderQueue = new LinkedQueue<>();
+        this.orderHistory = new MyArrayList<>();
+        this.orderStack = new LinkedStack<>();
+        this.sc = new Scanner(System.in);
         initCatalog();
-        Scanner sc = new Scanner(System.in);
+    }
+
+    public void run() {
         while (true) {
-            System.out.println(" Book Store App\n1. Place Order\n2. View Orders\n3. Search Order\n4. Process Next Order\n5. Update Order Status\n6. Exit");
-            int ch = sc.nextInt(); sc.nextLine();
+            int ch = showMenuAndGetChoice();
             switch (ch) {
-                case 1: placeOrder(sc); break;
+                case 1: placeOrder(); break;
                 case 2: viewOrders(); break;
-                case 3: searchOrder(sc); break;
+                case 3: searchOrder(); break;
                 case 4: processOrder(); break;
-                case 5: updateOrderStatus(sc); break;
-                case 6: return;
+                case 5: updateOrderStatus(); break;
+                case 6: undoLastOrder(); break;
+                case 7: return;
                 default: System.out.println("Invalid");
             }
         }
     }
 
-    static void initCatalog() {
-        catalog.add(new Book("Thinking, Fast and Slow", "Daniel Kahneman", 100, 5));
-        catalog.add(new Book("The Railway Children", "E. Nesbit", 80, 4));
-        catalog.add(new Book("Atomic Habits", "James Clear", 100, 5));
-        catalog.add(new Book("Educated", "Tara Westover", 100, 5));
-        catalog.add(new Book("Where the Crawdads Sing", "Delia Owens", 80, 4));
-        catalog.add(new Book("The Midnight Library", "Matt Haig", 80, 4));
-        catalog.add(new Book("The Da Vinci Code", "Dan Brown", 50, 3));
+    private int showMenuAndGetChoice() {
+        while (true) {
+            System.out.println(" Book Store App\n --------------\n1. Place Order\n2. View Orders\n3. Search Order\n4. Process Next Order\n5. Update Order Status\n6. Undo Last Order\n7. Exit");
+            System.out.print("Enter your choice: ");
+            String input = sc.nextLine().trim();
+            try { return Integer.parseInt(input); }
+            catch (NumberFormatException e) { System.out.println("Invalid input. Please enter a number only."); }
+        }
     }
 
-    static void placeOrder(Scanner sc) {
-        String name;
-        while (true) {
-            System.out.print("Name: ");
-            name = sc.nextLine().trim();
-            if (name.isEmpty()) {
-                System.out.println("Name cannot be empty.");
-                continue;
-            }
-            if (name.matches(".*\\d+.*")) {
-                System.out.println("Name cannot contain numbers. Please enter a valid name.");
-                continue;
-            }
-            break;
+    private String prompt(String message) {
+        System.out.print(message);
+        return sc.nextLine().trim();
+    }
+
+    private void showMessage(String message) {
+        System.out.println(message);
+    }
+
+    private void addBook(Book book) {
+        if (catalogSize == catalog.length) {
+            Book[] newCatalog = new Book[catalog.length * 2];
+            for (int i = 0; i < catalogSize; i++) newCatalog[i] = catalog[i];
+            catalog = newCatalog;
         }
-        String addr;
-        while (true) {
-            System.out.print("Address: ");
-            addr = sc.nextLine().trim();
-            if (addr.isEmpty()) {
-                System.out.println("Address cannot be empty.");
-                continue;
-            }
-            break;
-        }
-        ArrayList<OrderItem> items = new ArrayList<>();
+        catalog[catalogSize++] = book;
+    }
+
+    private void listCatalog() {
+        for (int i = 0; i < catalogSize; i++) System.out.println((i+1) + ". " + catalog[i].getTitle());
+    }
+
+    private Book findBookByKeyword(String keyword) {
+        for (int i = 0; i < catalogSize; i++) if (catalog[i].getKeyword().equalsIgnoreCase(keyword)) return catalog[i];
+        return null;
+    }
+
+    private void initCatalog() {
+        addBook(new Book("Thinking, Fast and Slow", "Daniel Kahneman", 100, 5, "TFAS", 5));
+        addBook(new Book("The Railway Children", "E. Nesbit", 80, 4, "TRC", 5));
+        addBook(new Book("Atomic Habits", "James Clear", 100, 5, "AH", 5));
+        addBook(new Book("Educated", "Tara Westover", 100, 5, "ED", 5));
+        addBook(new Book("Where the Crawdads Sing", "Delia Owens", 80, 4, "WTC", 5));
+        addBook(new Book("The Midnight Library", "Matt Haig", 80, 4, "TML", 5));
+        addBook(new Book("The Da Vinci Code", "Dan Brown", 50, 3, "TDC", 5));
+        addBook(new Book("Clean Code", "Robert C. Martin", 120, 5, "CC", 5));
+    }
+
+    private void placeOrder() {
+        String name = getCustomerName();
+        String addr = getShippingAddress();
+        MyArrayList<OrderItem> items = new MyArrayList<>();
         boolean addMore = true;
         while (addMore) {
-            for (int i = 0; i < catalog.size(); i++)
-                System.out.println((i+1)+". "+catalog.get(i).getTitle());
-            System.out.print("Choose this book: ");
-            int idx;
-            try {
-                idx = Integer.parseInt(sc.nextLine().trim()) - 1;
-            } catch (Exception e) {
-                System.out.println("Invalid input. Try again.");
-                continue;
+            listCatalog();
+            String input = prompt("Choose this book: ");
+            int bookIndex = -1;
+            try { bookIndex = Integer.parseInt(input) - 1; }
+            catch (NumberFormatException e) {
+                Book found = findBookByKeyword(input);
+                if (found == null) { showMessage("No book found with that keyword."); continue; }
+                for (int i = 0; i < catalogSize; i++) if (catalog[i] == found) { bookIndex = i; break; }
+                if (bookIndex == -1) { showMessage("No book found with that keyword."); continue; }
             }
-            if (idx < 0 || idx >= catalog.size()) {
-                System.out.println("Invalid book number.");
-                continue;
+            if (bookIndex < 0 || bookIndex >= catalogSize) { showMessage("Invalid book number."); continue; }
+            Book selectedBook = catalog[bookIndex];
+            showBookDetails(selectedBook);
+            int qty = getQuantity();
+            if (qty <= 0) { showMessage("Quantity must be positive."); continue; }
+            if (qty > selectedBook.getStock()) { showMessage("Not enough stock. Only " + selectedBook.getStock() + " available."); continue; }
+            items.add(new OrderItem(selectedBook, qty));
+            selectedBook.setStock(selectedBook.getStock() - qty);
+            while (true) {
+                String more = askToAddMore();
+                if (more.equals("y")) { addMore = true; break; }
+                else if (more.equals("n")) { addMore = false; break; }
+                else if (more.equals("u")) {
+                    if (!items.isEmpty()) {
+                        OrderItem undone = items.remove(items.size() - 1);
+                        Book book = undone.getBook();
+                        book.setStock(book.getStock() + undone.getQuantity());
+                        showMessage("Last book addition undone.");
+                    } else showMessage("Nothing to undo.");
+                } else showMessage("Please enter 'y' for yes, 'n' for no, or 'u' to undo last.");
             }
-            System.out.print("Quantity: ");
-            int qty;
-            try {
-                qty = Integer.parseInt(sc.nextLine().trim());
-            } catch (Exception e) {
-                System.out.println("Invalid input. Try again.");
-                continue;
-            }
-            if (qty <= 0) {
-                System.out.println("Quantity must be positive.");
-                continue;
-            }
-            items.add(new OrderItem(catalog.get(idx), qty));
-            System.out.print("Add another book? (y/n): ");
-            String ans = sc.nextLine().trim().toLowerCase();
-            addMore = ans.equals("y");
         }
-        if (items.size() == 0) {
-            System.out.println("No items in order. Order cancelled.");
-            return;
-        }
+        if (items.isEmpty()) { showMessage("No items in order. Order cancelled."); return; }
         sortItemsByTitle(items);
         Order order = new Order(name, addr, items);
         orderQueue.enqueue(order);
         orderHistory.add(order);
-        System.out.println("Order placed.");
+        orderStack.push(order);
+        showMessage("Order placed.");
+        int totalQuantity = 0;
+        for (int i = 0; i < items.size(); i++) totalQuantity += items.get(i).getQuantity();
+        showMessage("Quantity: " + totalQuantity + "  Total price: $" + order.getTotalPrice());
+        showMessage(" -----------------");
+        showMessage(" ");
     }
 
-    static void viewOrders() {
-        for (int i = 0; i < orderHistory.size(); i++) {
-            Order o = orderHistory.get(i);
-            System.out.println("Order "+o.getOrderNumber()+": Name: "+o.getCustomerName()+", Address: "+o.getShippingAddress()+", Status: "+o.getStatus());
-            System.out.print("Books: ");
-            ArrayList<OrderItem> items = o.getItems();
-            for (int j = 0; j < items.size(); j++) {
-                Book b = items.get(j).getBook();
-                System.out.print(b.getTitle() + " (Rating: " + b.getRating() + ")");
-                if (j < items.size() - 1) System.out.print(", ");
-            }
-            System.out.println();
-        }
+    private void viewOrders() {
+        for (int i = 0; i < orderHistory.size(); i++) printOrderDetails(orderHistory.get(i));
     }
 
-    static void searchOrder(Scanner sc) {
-        System.out.println("Search by: 1. Order Number  2. Customer Name  3. Book Name");
-        int type;
-        try {
-            type = Integer.parseInt(sc.nextLine().trim());
-        } catch (Exception e) {
-            System.out.println("Invalid input.");
-            return;
-        }
-        boolean found = false;
+    private void searchOrder() {
+        int type = getSearchType();
         if (type == 1) {
-            System.out.print("Order number: ");
-            String numStr = sc.nextLine().trim();
-            int num;
-            try {
-                num = Integer.parseInt(numStr);
-            } catch (Exception e) {
-                System.out.println("Invalid order number. Please enter digits only.");
-                return;
-            }
-            for (int i = 0; i < orderHistory.size(); i++) {
-                Order o = orderHistory.get(i);
-                if (o.getOrderNumber() == num) {
-                    System.out.println("Order number: " + o.getOrderNumber());
-                    printOrderDetails(o);
-                    found = true;
-                }
-            }
-            if (!found) {
-                System.out.println("Order not found.");
-            }
-            return;
-        } else if (type == 2) {
-            // Prompt for a valid customer name (not a number, not empty, no digits)
-            String customerName;
             while (true) {
-                System.out.print("Customer name: ");
-                customerName = sc.nextLine().trim();
-                if (customerName.isEmpty()) {
-                    System.out.println("Search cancelled.");
-                    return;
-                }
-                if (customerName.matches(".*\\d+.*")) {
-                    System.out.println("Name cannot contain numbers. Please enter a valid name.");
-                    continue;
-                }
-                break; // Valid name
-            }
-            String searchName = customerName.toLowerCase();
-            boolean foundName = false;
-            for (int i = 0; i < orderHistory.size(); i++) {
-                Order order = orderHistory.get(i);
-                String orderName = order.getCustomerName().toLowerCase();
-                if (orderName.contains(searchName)) {
-                    System.out.println("Order number: " + order.getOrderNumber());
-                    printOrderDetails(order);
-                    foundName = true;
-                }
-            }
-            if (!foundName) {
-                System.out.println("Not found");
-            }
-            return;
-        } else if (type == 3) {
-            System.out.print("Book name: ");
-            String bookName = sc.nextLine().trim().toLowerCase();
-            boolean foundBook = false;
-            for (int i = 0; i < orderHistory.size(); i++) {
-                Order o = orderHistory.get(i);
-                ArrayList<OrderItem> items = o.getItems();
-                for (int j = 0; j < items.size(); j++) {
-                    if (items.get(j).getBook().getTitle().toLowerCase().contains(bookName)) {
-                        System.out.println("Order number: " + o.getOrderNumber());
+                int num = getOrderNumber();
+                if (num == 4) { showMessage("Search cancelled."); return; }
+                boolean foundNum = false;
+                for (int i = 0; i < orderHistory.size(); i++) {
+                    Order o = orderHistory.get(i);
+                    if (o.getOrderNumber() == num) {
+                        showMessage("Order number: " + o.getOrderNumber());
                         printOrderDetails(o);
-                        foundBook = true;
-                        break;
+                        foundNum = true;
                     }
                 }
+                if (foundNum) return;
+                showMessage("Not found: " + num);
             }
-            if (!foundBook) System.out.println("Not found");
-            return;
+        } else if (type == 2) {
+            while (true) {
+                String customerName = getCustomerName();
+                if (customerName.isEmpty()) { showMessage("Search cancelled."); return; }
+                if (customerName.matches(".*\\d+.*")) { showMessage("Name cannot contain numbers. Please enter a valid name."); continue; }
+                boolean foundName = false;
+                for (int i = 0; i < orderHistory.size(); i++) {
+                    Order order = orderHistory.get(i);
+                    if (order.getCustomerName().equalsIgnoreCase(customerName)) {
+                        showMessage("Order number: " + order.getOrderNumber());
+                        printOrderDetails(order);
+                        foundName = true;
+                    }
+                }
+                if (foundName) return;
+                showMessage("Not found: " + customerName);
+            }
+        } else if (type == 3) {
+            while (true) {
+                String bookName = getBookName();
+                if (bookName.isEmpty()) { showMessage("Search cancelled."); return; }
+                boolean foundBook = false;
+                for (int i = 0; i < orderHistory.size(); i++) {
+                    Order o = orderHistory.get(i);
+                    MyArrayList<OrderItem> items = o.getItems();
+                    for (int j = 0; j < items.size(); j++) {
+                        Book book = items.get(j).getBook();
+                        if (book.getKeyword().equalsIgnoreCase(bookName)) {
+                            showMessage("Order number: " + o.getOrderNumber());
+                            printOrderDetails(o);
+                            foundBook = true;
+                            break;
+                        }
+                    }
+                }
+                if (foundBook) return;
+                showMessage("Not found: " + bookName);
+            }
         }
-        if (!found) System.out.println("Not found");
     }
 
-    static void printOrderDetails(Order o) {
-        System.out.println("Order"+o.getOrderNumber()+": Name: "+o.getCustomerName()+", Address: "+o.getShippingAddress()+", Status: "+o.getStatus());
-        System.out.print("Books: ");
-        ArrayList<OrderItem> items = o.getItems();
+    private void printOrderDetails(Order o) {
+        showMessage("Order"+o.getOrderNumber()+": Name: "+o.getCustomerName()+", Address: "+o.getShippingAddress()+", Status: "+o.getStatus());
+        showMessage("Books: ");
+        MyArrayList<OrderItem> items = o.getItems();
         for (int j = 0; j < items.size(); j++) {
             Book b = items.get(j).getBook();
-            System.out.print(b.getTitle() + " (Rating: " + b.getRating() + ")");
-            if (j < items.size() - 1) System.out.print(", ");
+            int qty = items.get(j).getQuantity();
+            int price = b.getPrice();
+            int total = qty * price;
+            showMessage(b.getTitle() + " (Quantity: " + qty + ", Price: $" + price + ", Rating: " + b.getRating() + ", Total: $" + total + ")");
+            if (j < items.size() - 1) showMessage(", ");
         }
-        System.out.println();
+        showMessage("\n");
     }
 
-    static void processOrder() {
-        if (orderQueue.size() == 0) { 
-            System.out.println("No orders"); 
-            return; 
-        }
+    private void processOrder() {
+        if (orderQueue.size() == 0) { showMessage("No orders"); return; }
         Order o = orderQueue.dequeue();
         o.setStatus("Shipped");
-        System.out.println("Processed Order#"+o.getOrderNumber());
+        showMessage("Processed Order#"+o.getOrderNumber());
     }
 
-    static void updateOrderStatus(Scanner sc) {
-        System.out.print("Enter order number: ");
-        int num;
-        try {
-            num = Integer.parseInt(sc.nextLine().trim());
-        } catch (Exception e) {
-            System.out.println("Invalid input.");
-            return;
-        }
+    private void updateOrderStatus() {
+        int num = getOrderNumber();
         for (int i = 0; i < orderHistory.size(); i++) {
             Order o = orderHistory.get(i);
             if (o.getOrderNumber() == num) {
-                System.out.println("Choose status: 1. Processing  2. Pending  3. Complete");
-                int statusChoice;
-                try {
-                    statusChoice = Integer.parseInt(sc.nextLine().trim());
-                } catch (Exception e) {
-                    System.out.println("Invalid input.");
-                    return;
-                }
+                int statusChoice = getStatusChoice();
                 String newStatus;
                 switch (statusChoice) {
                     case 1: newStatus = "Processing"; break;
                     case 2: newStatus = "Pending"; break;
                     case 3: newStatus = "Complete"; break;
-                    default: 
-                        System.out.println("Invalid status choice.");
-                        return;
+                    default: showMessage("Invalid status choice."); return;
                 }
                 o.setStatus(newStatus);
-                System.out.println("Order status updated to: " + newStatus);
+                if (newStatus.equals("Pending")) {
+                    showMessage("Order status set to Pending.");
+                }
+                showMessage("Order status updated to: " + newStatus);
                 return;
             }
         }
-        System.out.println("Order not found.");
+        showMessage("Order not found.");
     }
 
-    static void sortItemsByTitle(ArrayList<OrderItem> items) {
+    private void sortItemsByTitle(MyArrayList<OrderItem> items) {
         for (int i = 0; i < items.size()-1; i++) {
             int min = i;
             for (int j = i+1; j < items.size(); j++) {
-                if (items.get(j).getBook().getTitle().compareTo(items.get(min).getBook().getTitle()) < 0)
-                    min = j;
+                if (items.get(j).getBook().getTitle().compareTo(items.get(min).getBook().getTitle()) < 0) min = j;
             }
             if (min != i) {
                 OrderItem tmp = items.get(i);
@@ -276,6 +257,95 @@ public class BookstoreApp {
                 items.set(min, tmp);
             }
         }
+    }
+
+    private String getCustomerName() {
+        while (true) {
+            String name = prompt("Name: ");
+            if (name.matches(".*\\d+.*")) { showMessage("Name cannot contain numbers. Please enter a valid name."); continue; }
+            return name;
+        }
+    }
+
+    private String getShippingAddress() {
+        return prompt("Address: ");
+    }
+
+    private String getBookName() {
+        return prompt("Book name: ");
+    }
+
+    private int getOrderNumber() {
+        while (true) {
+            String input = prompt("Order number: ");
+            if (input.isEmpty()) return -1;
+            try { return Integer.parseInt(input); }
+            catch (NumberFormatException e) { showMessage("Invalid order number. Please enter digits only."); }
+        }
+    }
+
+    private int getQuantity() {
+        return Integer.parseInt(prompt("Quantity: "));
+    }
+
+    private int getSearchType() {
+        return Integer.parseInt(prompt("Search by: 1. Order Number  2. Customer Name  3. Book Name 4. Cancel\n"));
+    }
+
+    private int getStatusChoice() {
+        return Integer.parseInt(prompt("Status : 1. Processing, 2. Pending, 3. Complete: "));
+    }
+
+    private String askToAddMore() {
+        return prompt("Add another book? (y = yes, n = no, u = undo last): ").toLowerCase();
+    }
+
+    private void showBookDetails(Book book) {
+        showMessage("Selected Book: " + book.getTitle());
+        showMessage(" Author: " + book.getAuthor());
+        showMessage(" In Stock: " + book.getStock());
+    }
+
+    // Add undoLastOrder method
+    private void undoLastOrder() {
+        if (orderStack.isEmpty()) {
+            showMessage("No order to undo.");
+            return;
+        }
+        Order lastOrder = orderStack.pop();
+        int lastOrderNum = lastOrder.getOrderNumber();
+        // Remove from orderQueue if present (only if not yet processed)
+        LinkedQueue<Order> newQueue = new LinkedQueue<>();
+        boolean removedFromQueue = false;
+        while (!orderQueue.isEmpty()) {
+            Order o = orderQueue.dequeue();
+            if (!removedFromQueue && o.getOrderNumber() == lastOrderNum) {
+                removedFromQueue = true;
+                continue;
+            }
+            newQueue.enqueue(o);
+        }
+        orderQueue = newQueue;
+        // Remove from orderHistory
+        for (int i = 0; i < orderHistory.size(); i++) {
+            if (orderHistory.get(i).getOrderNumber() == lastOrderNum) {
+                orderHistory.remove(i);
+                break;
+            }
+        }
+        // Restore book stock
+        MyArrayList<OrderItem> items = lastOrder.getItems();
+        for (int i = 0; i < items.size(); i++) {
+            OrderItem item = items.get(i);
+            Book orderedBook = item.getBook();
+            for (int k = 0; k < catalogSize; k++) {
+                Book catalogBook = catalog[k];
+                if (catalogBook.getKeyword().equalsIgnoreCase(orderedBook.getKeyword())) {
+                    catalogBook.setStock(catalogBook.getStock() + item.getQuantity());
+                }
+            }
+        }
+        showMessage("Last order has been undone and stock restored.");
     }
 }
 
