@@ -1,4 +1,3 @@
-// This class is a simple stack (last in, first out).
 package CW_NDQ;
 
 public class LinkedStack<T> {
@@ -31,14 +30,6 @@ public class LinkedStack<T> {
         return data;
     }
 
-    public T peek() {
-        if (isEmpty()) throw new IllegalStateException("Stack is empty");
-        return top.data;
-    }
-
-    public int size() {
-        return size;
-    }
 
     public boolean isEmpty() {
         return size == 0;

@@ -1,4 +1,4 @@
-// This class is a simple list that can grow.
+
 package CW_NDQ;
 
 public class MyArrayList<E> {
@@ -8,12 +8,6 @@ public class MyArrayList<E> {
 
     public MyArrayList() {
         this.elements = (E[]) new Object[DEFAULT_CAPACITY];
-        this.nextIndex = 0;
-    }
-
-    public MyArrayList(int initialCapacity) {
-        if (initialCapacity <= 0) initialCapacity = DEFAULT_CAPACITY;
-        this.elements = (E[]) new Object[initialCapacity];
         this.nextIndex = 0;
     }
 
@@ -66,34 +60,6 @@ public class MyArrayList<E> {
     public boolean isEmpty() {
         return nextIndex == 0;
     }
-
-//    public void clear() {
-//        for (int i = 0; i < nextIndex; i++) {
-//            elements[i] = null;
-//        }
-//        nextIndex = 0;
-//        if (elements.length > DEFAULT_CAPACITY) {
-//            elements = (E[]) new Object[DEFAULT_CAPACITY];
-//        }
-//    }
-//
-//    public boolean contains(E element) {
-//        for (int i = 0; i < nextIndex; i++) {
-//            if (elements[i].equals(element)) {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
-//    public int indexOf(E element) {
-//        for (int i = 0; i < nextIndex; i++) {
-//            if (elements[i].equals(element)) {
-//                return i;
-//            }
-//        }
-//        return -1;
-//    }
 
     private void ensureCapacity(int minCapacity) {
         if (minCapacity > elements.length) {

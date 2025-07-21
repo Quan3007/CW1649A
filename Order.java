@@ -1,4 +1,4 @@
-// This class represents a customer's order.
+
 package CW_NDQ;
 
 public class Order {

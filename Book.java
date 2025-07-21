@@ -1,4 +1,4 @@
-// This class represents a book in the store.
+
 package CW_NDQ;
 public class Book {
     private String title, author, keyword;

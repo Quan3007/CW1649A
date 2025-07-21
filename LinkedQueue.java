@@ -1,4 +1,3 @@
-// This class is a simple queue (first in, first out).
 package CW_NDQ;
 
 public class LinkedQueue<T> implements AbstractLinkedQueue<T> {
@@ -47,15 +46,6 @@ public class LinkedQueue<T> implements AbstractLinkedQueue<T> {
     public T dequeue() {
         return poll();
     }
-
-    @Override
-    public T peek() {
-        if (head == null) {
-            throw new IllegalStateException("Queue is empty");
-        }
-        return head.data;
-    }
-
     @Override
     public int size() {
         return size;
