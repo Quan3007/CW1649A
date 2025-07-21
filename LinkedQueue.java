@@ -6,7 +6,9 @@ public class LinkedQueue<T> implements AbstractLinkedQueue<T> {
     private Node<T> tail;
     private int size;
 
-    public LinkedQueue(){}
+    public LinkedQueue(){
+
+    }
 
     private static class Node<T> {
         T data;

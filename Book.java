@@ -11,12 +11,11 @@ public class Book {
          return title; }
     public int getRating(){ 
         return rating; }
-    public void setRating(int rating){
-        this.rating = rating; }
     public int getPrice() { 
         return price; }
     public String getAuthor() {
          return author; }
+
     public String getKeyword() {
          return keyword; }
     public int getStock() { 
