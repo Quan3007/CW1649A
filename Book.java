@@ -15,7 +15,6 @@ public class Book {
         return price; }
     public String getAuthor() {
          return author; }
-
     public String getKeyword() {
          return keyword; }
     public int getStock() { 
