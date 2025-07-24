@@ -1,14 +1,14 @@
 
-package CW_NDQ;
+package CW_NDQ.ADT;
 
 public class MyArrayList<E> {
-    private static final int DEFAULT_CAPACITY = 3;
+
     private E[] elements;
     private int nextIndex;
 
     public MyArrayList() {
-        this.elements = (E[]) new Object[DEFAULT_CAPACITY];
-        this.nextIndex = 0;
+        this.elements = (E[]) new Object[3];
+        this.nextIndex = 0; 
     }
 
     public boolean add(E element) {
@@ -33,23 +33,32 @@ public class MyArrayList<E> {
         return oldElement;
     }
 
-    public E remove(int index) {
-        if (index < 0 || index >= nextIndex) {
+
+    public E remove ( int index ) {
+        if (index < 0 || index > nextIndex) {
             throw new IndexOutOfBoundsException("Index out of bounds");
         }
+
         E oldElement = elements[index];
-        for (int i = index; i < nextIndex - 1; i++) {
+
+        // shift elements to the left
+        for ( int i = index; i < nextIndex - 1; i++ ) {
             elements[i] = elements[i + 1];
         }
-        elements[--nextIndex] = null;
-        if (nextIndex > 0 && nextIndex < elements.length / 3 && elements.length > DEFAULT_CAPACITY) {
-            int newCapacity = Math.max(elements.length / 2, DEFAULT_CAPACITY);
-            E[] smallerElements = (E[]) new Object[newCapacity];
-            for (int i = 0; i < nextIndex; i++) {
+
+        elements[nextIndex - 1] = null;
+        nextIndex--;
+
+        if (nextIndex < elements.length / 3) {
+            E[] smallerElements = (E[]) new Object[elements.length / 2];
+
+            for ( int i = 0; i < nextIndex; i++ ) {
                 smallerElements[i] = elements[i];
             }
+
             elements = smallerElements;
         }
+
         return oldElement;
     }
 
@@ -57,8 +66,12 @@ public class MyArrayList<E> {
         return nextIndex;
     }
 
-    public boolean isEmpty() {
-        return nextIndex == 0;
+    public boolean isEmpty () {
+        if (nextIndex == 0) {
+            return true;
+        }
+
+        return false;
     }
 
     private void ensureCapacity(int minCapacity) {
@@ -73,12 +86,17 @@ public class MyArrayList<E> {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < nextIndex; i++) {
-            sb.append(elements[i]);
-            if (i < nextIndex - 1) sb.append(", ");
+        StringBuilder result = new StringBuilder();
+        result.append("[");
+        for ( int i = 0; i < nextIndex; i++ ) {
+            result.append(elements[i]);
+
+            if (i < nextIndex - 1) {
+                result.append(", ");
+            }
         }
-        sb.append("]");
-        return sb.toString();
+        result.append("]");
+        return result.toString();
     }
 }
+

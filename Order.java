@@ -1,6 +1,8 @@
 
 package CW_NDQ;
 
+import CW_NDQ.ADT.MyArrayList;
+
 public class Order {
     private static int nextOrderNumber = 1;
     private int orderNumber;

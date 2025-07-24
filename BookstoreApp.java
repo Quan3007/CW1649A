@@ -1,5 +1,9 @@
 package CW_NDQ;
 
+import CW_NDQ.ADT.LinkedQueue;
+import CW_NDQ.ADT.LinkedStack;
+import CW_NDQ.ADT.MyArrayList;
+
 import java.util.Scanner;
 
 public class BookstoreApp {
@@ -125,7 +129,7 @@ public class BookstoreApp {
         if (items.isEmpty()) { showMessage("No items in order. Order cancelled."); return; }
         sortItemsByTitle(items);
         Order order = new Order(name, addr, items);
-        orderQueue.enqueue(order);
+        orderQueue.offer(order);
         orderHistory.add(order);
         orderStack.push(order);
         showMessage("Order placed.");
@@ -216,7 +220,7 @@ public class BookstoreApp {
 
     private void processOrder() {
         if (orderQueue.size() == 0) { showMessage("No orders"); return; }
-        Order o = orderQueue.dequeue();
+        Order o = orderQueue.poll();
         o.setStatus("Shipped");
         showMessage("Processed Order#"+o.getOrderNumber());
     }
@@ -318,12 +322,12 @@ public class BookstoreApp {
         LinkedQueue<Order> newQueue = new LinkedQueue<>();
         boolean removedFromQueue = false;
         while (!orderQueue.isEmpty()) {
-            Order o = orderQueue.dequeue();
+            Order o = orderQueue.poll();
             if (!removedFromQueue && o.getOrderNumber() == lastOrderNum) {
                 removedFromQueue = true;
                 continue;
             }
-            newQueue.enqueue(o);
+            newQueue.offer(o);
         }
         orderQueue = newQueue;
         // Remove from orderHistory
